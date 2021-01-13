@@ -15,4 +15,4 @@ output : table conversion
 	- output : from t vs F table, use conversion factor from (1), y val, x val = index (time stamp)
 	- fitting and histogram
 
-15h15 next meeting 13.01.2020
+11h next meeting 15.01.2020
