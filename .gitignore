@@ -41,3 +41,4 @@ vignettes/*.pdf
 # Other files
 .txt
 misc
+.DS_Store
