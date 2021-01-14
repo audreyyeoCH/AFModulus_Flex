@@ -39,6 +39,5 @@ vignettes/*.pdf
 .Renviron
 
 # Other files
-.txt
 misc
 .DS_Store
