@@ -16,3 +16,19 @@ output : table conversion
 	- fitting and histogram
 
 11h next meeting 15.01.2020
+
+
+next goals Tuesday 19.01.2020, 10h meet, Audrey's zoom:
+
+YM formula (Selene)
+Topography (python Astrid and Selen) create image
+Intergrate my code and for loop (Audrey) 
+Tell Selene contact point and max point. 
+
+next meeting 20.01.2020, 13h30h meet, Audrey's zoom.
+
+next next to do list, Selen, Astrid, Audrey :
+Quantify precision and accuracy in intersection
+Quantify precision and accuracy in YM
+Define background and study aims, including variables :
+Contact point 
