@@ -7,22 +7,17 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
-## include Python cede (https://rstudio.github.io/reticulate/)
+# include Python cede (https://rstudio.github.io/reticulate/)
 #knitr::knit_engines$set(python = reticulate::eng_python)
 #use_python("/usr/local/bin/python3.9")
 #use_python("/usr/bin/python")
 # py$x would access an x variable created within Python from R
 # r.x would access to x variable created within R from Python
-
 # clear workspace
 rm(list = ls())
-
-# set working directory
-#setwd("~/Documents/Zurich_PhD/courses/2021_01_11_Compulsory_LSZGS SysBio_Computational Biology/git_folder/")
-
 # load packages
 library(tidyverse)
+library(cowplot)
 ```
 
 # Atomic Force Microscopy - From Topology to Stiffness (Modulus)
@@ -32,11 +27,22 @@ The git page of this project can be found here <https://github.com/audreyyeoCH/A
 
 ## Import of AFM curves (force vs. separation distance) for each pixel
 
-```{r import, echo = FALSE}
+```{r import, echo = FALSE, warning = FALSE, message = FALSE}
+
+### old ###
+# set working directory (by Astrid)
+#setwd("~/Documents/Zurich_PhD/courses/2021_01_11_Compulsory_LSZGS SysBio_Computational Biology/git_folder/")
+
 #Astrid's
 #Curve_name <- "AFModulus_Flex/F_vs_t_curves/20200619_MG1655_OMV_Prot15_50uM_Colistin.005.pfc-4069_ForceCurveIndex_45647.spm\ -\ NanoScope\ Analysis_F_vs_t.txt"
+#####
 
-#Audrey's
+### new ###
+#For Astrid to try, by Audrey
+# PATH = file.path(path.expand("~"), "Documents", "Zurich_PhD", "courses", "2021_01_22_Compulsory_LSZHSSysBio_Computational Biology", "git_folder") # ancova project folder
+# setwd("PATH")
+#####
+
 Curve_name <-"F_vs_t_curves/20200619_.005.pfc-4069_ForceCurveIndex_45647.spm - NanoScope Analysis_F_vs_t.txt"
 F_vs_t_curve1 <- read.table(Curve_name, 
                             quote="\"", 
@@ -48,7 +54,7 @@ F_vs_t_curve1 <- as_tibble(F_vs_t_curve1)
 ```
 
 #### Plot 1 curve
-```{r plot, echo=FALSE}
+```{r plot, echo=FALSE,warning = FALSE, message = FALSE}
 ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
   geom_point() +
   geom_line() +
@@ -66,7 +72,7 @@ We will use a sliding window approach to approximate the **gradient** of the lin
 
 ## Extract **maximal force (F max)** from each graph
 
-```{r Fmax, echo=F}
+```{r Fmax, echo=FALSE, warning = FALSE, message = FALSE}
 Fmax       <- max(F_vs_t_curve1$pN)
 Fmax_t     <- max(F_vs_t_curve1$ms)
 Fmax_index <- which(F_vs_t_curve1$pN == Fmax) # alternative: which.max(F_vs_t_curve1$pN)
@@ -81,7 +87,7 @@ F max = `r Fmax`, the time of F max = `r Fmax_t`.
 * We will use the force signal between time 0.0 - 0.5 ms as well as 1.5 - 2.0 ms as **baseline**.
 * We will use a sliding window approach to approximate the **gradient** of the linear slope within the time 0.5 - 1.2 ms.
 
-```{r intersect, echo=FALSE, warning=F}
+```{r intersect, echo=FALSE, warning = FALSE, message = FALSE}
 
 ## baseline
 Index_t_0.5 <- nrow(F_vs_t_curve1)/4  #index after 1st quarter
@@ -171,42 +177,69 @@ ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
 
 
 ### Intersect between baseline and parabular fit
-```{r parabula, echo=FALSE}
+
+```{r parabula, echo=FALSE, warning = FALSE, message = FALSE}
 
 df = F_vs_t_curve1
-ggplot(df[1:150,]) +
-  geom_line(aes(x = ms, y = pN))
+p1 <- ggplot(df[1:150,]) +
+  geom_line(aes(x = ms, y = pN)) +
+  labs(x = "Time [ms]",
+      y = "Force [pN]")
 
+
+### create long form ###
 #min(df$pN[105])
+# dfmax = df[110:150,]
+# dfstart = df[0:100,]
+# modelmax = lm(pN ~ poly(ms,2), data= dfmax)
+# modelstart = lm(pN ~ ms, data= dfstart)
+# ms = seq(0, 2, 0.01)
+# df$predicted.intervals_max <- predict(modelmax, df)
+# df$predicted.intervals_start <- predict(modelstart, df)
+# dflong = data.frame(ms = df$ms, 
+#            pN = data.matrix(c(df$pN, df$predicted.intervals_start, 
+#                               df$predicted.intervals_max)),
+#            type = as.factor(c(rep("raw", length(df$pN)), 
+#                               rep("start", length(df$predicted.intervals_start)), 
+#                               rep("max", length(df$predicted.intervals_max)))))
+#save(dflong, file = "F_vs_t_curves/dflong.RData")
+########################
 
-dfmax = df[110:150,]
-dfstart = df[0:100,]
-modelmax = lm(pN ~ poly(ms,2), data= dfmax)
-modelstart = lm(pN ~ ms, data= dfstart)
-ms = seq(0, 2, 0.01)
-df$predicted.intervals_max <- predict(modelmax, df)
-df$predicted.intervals_start <- predict(modelstart, df)
-dflong = data.frame(ms = df$ms, 
-           pN = data.matrix(c(df$pN, df$predicted.intervals_start, 
-                              df$predicted.intervals_max)),
-           type = as.factor(c(rep("raw", length(df$pN)), 
-                              rep("start", length(df$predicted.intervals_start)), 
-                              rep("max", length(df$predicted.intervals_max)))))
-ggplot(dflong) +
+load("F_vs_t_curves/dflong.RData")
+p2 <- ggplot(dflong) +
   geom_line(aes(ms, pN, colour = type)) +
   coord_cartesian(xlim=c(0.0, 1.2), ylim = c(-30,150)) +
-  labs()
+  scale_x_continuous(limits = c(0,2), breaks= seq(0,1.2,0.2)) +
+  scale_y_continuous(limits = c(-30, 150), breaks = seq(-30, 150,10)) +
+  labs(x = "Time [ms]",
+      y = "Force [pN]")
+
+plot_grid(p1, p2, labels = c('a', 'b'))
+
+#intersection is 0.835 ms and 0 pN
+```
+
+```{r intersect_parabola, echo=FALSE, warning = FALSE, message = FALSE}
+#The intersection with a linear and parabola fit is 0.835 ms and 0 pN
+ggplot(dflong) +
+  geom_line(aes(ms, pN, colour = type)) +
+  coord_cartesian(xlim=c(0.8, 1.2), ylim = c(-30,150)) +
+  scale_x_continuous(limits = c(0.8,2), breaks= seq(0.8,1.2,0.03)) +
+  scale_y_continuous(limits = c(-30, 150), breaks = seq(-30, 150,10)) +
+  geom_vline(xintercept = 0.835, colour = "pink", linetype = "dotted")+
+  labs(x = "Time [ms]",
+      y = "Force [pN]")
 ```
 
 ### Mean of error increase from baseline (= start of adhesion dent) and error from linear gradient (= end of adhesion dent)
-```{r dent, echo=FALSE}
+```{r dent, echo=FALSE, warning = FALSE, message = FALSE}
 
 
 ```
 
 
 ## Compute **indentation depth (d)** from touching point for each pixel
-```{r inden, echo=FALSE}
+```{r inden, echo=FALSE, warning = FALSE, message = FALSE}
 
 d <- Fmax_t - Touching_point_t
 
@@ -215,7 +248,7 @@ The indentation depth d = `r d`
 
 
 ## Compute **modulus (= stiffness, E)** for each pixel from F-max and d
-```{r modulus, echo=FALSE}
+```{r modulus, echo=FALSE, warning = FALSE, message = FALSE}
 # Fmax
 # d
 
@@ -237,7 +270,7 @@ The indentation depth d = `r d`
 
 
 ## Plot topology against modulus? Can this detect 'antibiotics affected areas'?
-```{r further, echo=FALSE}
+```{r further, echo=FALSE, warning = FALSE, message = FALSE}
 
 
 ```
