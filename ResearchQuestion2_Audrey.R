@@ -61,29 +61,67 @@ ggplot(df) +
   geom_vline(xintercept = 0.9843756, colour = "pink") +
   geom_hline(yintercept = 149, colour = "pink") 
 
-ggplot(df) +
-  geom_jitter(aes(x = ms, y = pN)) +
-  geom_line(aes(x = ms, y = pN)) +
-  scale_x_continuous(limits = c(0.8,1.14), breaks= seq(0.8,1.15,0.02)) +
-  geom_vline(xintercept = 0.9843756, colour = "pink") 
-locator()
 # Find coefficients for intersection 
 # source also http://www.sthda.com/english/articles/40-regression-analysis/162-nonlinear-regression-essentials-in-r-polynomial-and-spline-regression-models/
 # intersection https://stackoverflow.com/questions/34248347/r-locate-intersection-of-two-curves
 # first model the max
 dfmax = df[100:150,]
-dfstart = df[0:99,]
+dfstart = df[0:110,]
 plot(dfmax)
 plot(dfstart)
+mean(dfstart$pN)
+# [1] -0.09917442
+abline(h = mean(dfstart$pN))
+locator()
+
+(plot2 <- ggplot(NULL, aes(v, p)) + 
+    geom_point(data = df1) +
+    geom_step(data = df2)
+)
 
 f1 <- approxfun(dfmax$ms, dfmax$pN)
 f2 <- approxfun(dfstart$ms, dfstart$pN)
 plot(f1)
 plot(f2)
+abline(h = mean(dfstart$pN))
 
 
-modelmax = lm(pN ~ ms+ms^2, data= dfmax)
+modelmax = lm(pN ~ poly(ms,2), data= dfmax)
 modelstart = lm(pN ~ ms, data= dfstart)
+
+ms = seq(0, 2, 0.01)
+predicted.intervals_max <- predict(modelmax, dfmax)
+predicted.intervals_start <- predict(modelstart, dfstart)
+#lines(dfmax$ms, predicted.intervals,col='green',lwd=3)
+#plot(dfmax$ms, predicted.intervals)
+
+dfmax$predicted.intervals_max = predicted.intervals_max
+dfstart$predicted.intervals_start = predicted.intervals_start
+
+ggplot(dfmax) +
+  geom_line(aes(ms, predicted.intervals_max))
+ggplot(dfstart) +
+  geom_line(aes(ms, predicted.intervals_start))
+
+### new 
+ggplot(df) +
+  geom_jitter(aes(x = ms, y = pN)) +
+  geom_line(aes(x = ms, y = pN)) +
+  scale_x_continuous(limits = c(0,2), breaks= seq(0,2,0.2)) +
+  scale_y_continuous(limits = c(-28, 150), breaks = seq(-25, 160,10)) +
+  geom_hline(yintercept = mean(dfstart$pN), colour = "pink", lwd = .5) +
+  geom_line(dfmax, aes(x = dfmax$ms, y = dfmax$predicted.intervals)) +
+  labs(x = "Time [ms]", y = "Force [pN]")
+  
+ggplot(dfmax) +
+  geom_line(aes(x = ms, y =predicted.intervals )) 
+  
+ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
+    geom_point() +
+    geom_line() +
+    +
+    ggtitle(Curve_name) +
+    
 
 # max
 coef(modelmax)
@@ -94,7 +132,7 @@ pNp = predict(modelmax, list(Time=ms, Time2=ms^2))
 #predictedcounts <- predict(quadratic.model,)
 plot(ms, pNp, pch=16, xlab = "Time (s)", ylab = "Counts", cex.lab = 1.3, col = "blue")
 
-lines(ms, pNp, col = "darkgreen", lwd = 3)
+lines(ms, pNp, col = "darkgreen", lwd = 1)
 plot(HARRIS$ms, HARRIS$pN)
 
 v_max = mean(HARRIS$pN)
