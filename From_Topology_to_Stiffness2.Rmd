@@ -1,0 +1,256 @@
+---
+title: "AFModulus_Flex"
+author: "Selen Manioglu, Astrid Stubbusch, Audrey Yeo"
+date: "1/11/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+## include Python cede (https://rstudio.github.io/reticulate/)
+knitr::knit_engines$set(python = reticulate::eng_python)
+#use_python("/usr/local/bin/python3.9")
+#use_python("/usr/bin/python")
+# py$x would access an x variable created within Python from R
+# r.x would access to x variable created within R from Python
+
+# clear workspace
+rm(list = ls())
+
+# set working directory
+setwd("~/Documents/Zurich_PhD/courses/2021_01_11_Compulsory_LSZGS SysBio_Computational Biology/git_folder/")
+
+# load packages
+library(tidyverse)
+```
+
+# Atomic Force Microscopy - From Topology to Stiffness (Modulus)
+
+The git page of this project can be found here <https://github.com/audreyyeoCH/AFModulus_Flex>.
+
+
+\newpage
+## Import of AFM curves (force vs. separation distance) for each pixel
+
+```{r import, echo = FALSE}
+Curve_name <- "AFModulus_Flex/F_vs_t_curves/20200619_.005.pfc-4069_ForceCurveIndex_45647.spm - NanoScope Analysis_F_vs_t.txt"
+F_vs_t_curve1 <- read.table(Curve_name, 
+                            quote="\"", 
+                            header = T,
+                            comment.char="", 
+                            stringsAsFactors=FALSE)
+F_vs_t_curve1 <- as_tibble(F_vs_t_curve1)
+
+```
+
+#### Plot 1 curve
+```{r plot, echo=FALSE}
+ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
+  geom_point() +
+  geom_line() +
+  ggtitle(Curve_name) +
+    labs(
+      x = "Time [ms]",
+      y = "Force [pN]"
+    )
+
+```
+We will use the force signal between time 0.0 - 0.5 ms as well as 1.5 - 2.0 ms as **baseline**.
+
+We will use a sliding window approach to approximate the **gradient** of the linear slope within the time 0.5 - 1.2 ms.
+
+
+\newpage
+## Extract **maximal force (F max)** from each graph
+
+```{r Fmax, echo=F}
+Fmax       <- max(F_vs_t_curve1$pN)
+Fmax_t     <- F_vs_t_curve1$ms[F_vs_t_curve1$pN == Fmax]
+Fmax_index <- which(F_vs_t_curve1$pN == Fmax) # alternative: which.max(F_vs_t_curve1$pN)
+
+
+```
+F max = `r Fmax`, the time of F max = `r Fmax_t`.
+
+\newpage
+## Compute Contacting point
+
+### A) Intersect between baseline and linear gradient
+* We will use the force signal between time 0.0 - 0.5 ms as well as 1.5 - 2.0 ms as **baseline**.
+* We will use a sliding window approach to approximate the **gradient** of the linear slope within the time 0.5 - 1.2 ms.
+
+```{r intersect, echo=FALSE, warning=F}
+
+## baseline
+Index_t_0.5 <- nrow(F_vs_t_curve1)/4  #index after 1st quarter
+Index_t_1.2 <- floor(1.2/2 * nrow(F_vs_t_curve1)) #index after 60%
+Index_t_1.5 <- 3/4 * nrow(F_vs_t_curve1) #index after 3 quarters
+Index_t_2.0 <- nrow(F_vs_t_curve1) #last index
+
+Force_base_values <- c( F_vs_t_curve1$pN[1 : Index_t_0.5], F_vs_t_curve1$pN[Index_t_1.5 : Index_t_2.0])
+Force_baseline <- mean(Force_base_values)
+
+# plot baseline values and baseline (red)
+Dataframe <- as.data.frame(cbind(1:(length(Force_base_values)), Force_base_values))
+colnames(Dataframe) <- c("index", "force")
+ggplot(data = Dataframe, mapping = aes(x = index, y = force )) +
+  geom_point() +
+  geom_line() +
+  geom_abline(slope = 0, intercept = Force_baseline, colour = "red", lwd = 1.5) +
+  ggtitle(Curve_name) +
+    labs(
+      x = "Time [ms]",
+      y = "Force [pN]"
+    )
+
+
+
+## gradient 
+# curve to consider
+F_vs_t_gradient <- F_vs_t_curve1[Index_t_0.5 : Index_t_1.2, ]
+
+# calc best fitting positive slope
+library(zoo)
+Zoo_data <- zoo(F_vs_t_gradient)
+
+output <- zoo::rollapply(
+  data = Zoo_data, 
+  width = 8, 
+  FUN = function(z) {
+    lmfit <- lm(formula = pN ~ ms, data = as.data.frame(z))
+    c(
+      intercept = unname(lmfit$coefficients[1]),
+      gradient = unname(lmfit$coefficients[2]),
+      rsquared = summary(lmfit)$r.squared,
+      meanms = mean(lmfit$model$ms)
+    )
+  },
+  by.column = FALSE
+)
+
+# Filter only positive slopes
+output <- as.data.frame(output)
+output <- output[output$gradient > 0,]
+bestfit <- as.data.frame(output)[which.max(output$rsquared),]
+
+# plot
+ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
+  geom_point() +
+  geom_line() +
+  geom_abline(intercept = bestfit$intercept, slope = bestfit$gradient, colour = "blue", lwd = 1.5) +
+  ggtitle(Curve_name) +
+    labs(
+      x = "Time [ms]",
+      y = "Force [pN]"
+    )
+
+
+## intersect
+# bestfit$gradient * x + bestfit$intercept = Force_baseline
+# x = (Force_baseline - bestfit$intercept)/ bestfit$gradient
+Contacting_point_t <- (Force_baseline - bestfit$intercept)/ bestfit$gradient
+Contacting_point_F <- bestfit$gradient * Contacting_point_t + bestfit$intercept 
+Contacting_point   <- as.data.frame(Contacting_point_t, Contacting_point_F)
+
+# plot
+ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
+  geom_point() +
+  geom_line() +
+  geom_abline(slope = 0, intercept = Force_baseline, colour = "red", lwd = 1.5) +
+  geom_abline(intercept = bestfit$intercept, slope = bestfit$gradient, colour = "blue", lwd = 1.5) +
+  geom_point(data = Contacting_point, mapping = (aes(x = Contacting_point_t, y = Contacting_point_F, colour = "orange"))) +
+  ggtitle(Curve_name) +
+    labs(
+      x = "Time [ms]",
+      y = "Force [pN]"
+    )
+
+```
+
+
+### B) Intersect between baseline and parabular fit & comparison to linear fit intersect
+```{r parabula, echo=T}
+# Audrey
+
+```
+
+### C) Mean of error increase from baseline (= start of adhesion dent) and error from linear gradient (= end of adhesion dent)
+```{r dent, echo=T}
+# suggested by Jörg Stelling
+
+```
+
+
+\newpage
+## Compute **indentation depth (d)** from Contacting point for each pixel
+```{r inden, echo=FALSE}
+
+# calculate time steps between all measurements in F_vs_t_curve1
+Time_difference <- Fmax_t - Contacting_point_t
+Time_step <-  F_vs_t_curve1[2,1]
+Time_steps_in_d <- Time_difference / Time_step
+
+# Fmax_index  already known
+
+# Contacting_point_index
+Contacting_point_index <- unlist( Fmax_index - floor(Time_steps_in_d) )
+
+# import distance array
+Curve_Z <- "AFModulus_Flex/F_vs_Z_curves/20200619_.005.pfc-4069_ForceCurveIndex_45647.spm - NanoScope Analysis.txt"
+F_vs_Z_curve <- read.table(Curve_Z, 
+                            quote="\"", 
+                            header = T,
+                            comment.char="", 
+                            stringsAsFactors=FALSE)
+Distance_axis <- as.vector(F_vs_Z_curve['nm'])
+
+# read out delta from the distance array, using the index of Fmax-time and the index of contact-point-time
+d <- Distance_axis[Fmax_index, ] - Distance_axis[Contacting_point_index, ]
+```
+The indentation depth d = `r d` nm.
+
+\newpage
+## Compute **modulus (= stiffness, E)** for each pixel from F-max and d
+```{r modulus, echo=FALSE}
+
+# Fmax & indentation depth d were computed above
+
+# Poisson’s ratio (typically 0.2-0.5)=0.3
+v <- 0.3
+
+# half angle of the indenter=18^0
+alpha <- 180
+
+# compute Young’s modulus
+E <- (Fmax * pi * (1 - v^2)) / (2 * tan(alpha) * d^2)
+
+```
+The Young’s modulus E = `r E` [UNIT?].
+
+\newpage
+## Visualisation of the Young's Modulus
+### Print picture of topology
+```{r picT, echo=FALSE}
+
+```
+
+### Print picture of stiffness
+```{r picS, echo=FALSE}
+
+```
+
+
+\newpage
+## Error propagation/ sensitivity analysis of the modulus
+```{r error, echo=FALSE}
+
+```
+
+\newpage
+## Plot topology against modulus? Can this detect 'antibiotics affected areas'?
+```{r further, echo=FALSE}
+
+
+```
+
