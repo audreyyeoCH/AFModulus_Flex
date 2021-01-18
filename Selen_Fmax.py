@@ -9,13 +9,15 @@ Created on Tue Jan 12 20:37:56 2021
 import glob
 import os
 #import numpy as np
+import matplotlib.pyplot as plt
+
 
 
 os.chdir(r'/Users/selenm/Documents/Python_test/Selen_Manioglu_CodeClinic_File/F_vs_t_curves')
-myFiles = glob.glob('*.txt')
+myFiles = sorted(glob.glob('*.txt'))
 #print(myFiles)
 
-f=open(myFiles[1],"r")
+f=open(myFiles[0],"r")
 lines=f.readlines() 
 F=[]       
 t=[]
@@ -32,3 +34,9 @@ print ('The time value at maximum F value is '+str(t[max_index])+' ms.')
 
 #The maximum F value is 149.9152 pN and its index is 127.
 #The time value at maximum F value is 0.9921881 ms.
+
+plt.plot(t,F)      #Plotting F vs t curve
+plt.plot(t[max_index],max_value, marker='D', markersize=5, color="red")
+plt.xlabel('t (ms)')
+plt.ylabel('F (pN)')
+plt.show()
