@@ -22,7 +22,8 @@ for (i in 1:7) {assign(paste("F_vs_t_curve",i, sep = ""),
 ## Creating seven raw plots of data points
 for (i in 1:7) {
   assign( paste0("raw", i, sep = ""), 
-  ggplot(data = data.frame("F_vs_t_curve", i, sep = "" ), mapping = aes(x = ms, y = pN)) +
+  ggplot(data = data.frame("F_vs_t_curve", i, sep = "" ), 
+         mapping = aes(x = data.frame(paste("F_vs_t_curve", i, sep = "" ))[i]$ms, y = data.frame("F_vs_t_curve", i, sep = "" )[i]$pN)) +
   geom_point() +
   geom_line() +
   ggtitle("") +
@@ -31,43 +32,32 @@ for (i in 1:7) {
     y = "Force [pN]")) }
 
 
+for (i in 1:7) {
+  assign( paste0("raw", i, sep = ""), 
+          ggplot(data = data.frame("F_vs_t_curve", i, sep = "" ), 
+                 mapping = aes(x = data.frame(paste("F_vs_t_curve", i, sep = "" ))[i]$ms, 
+                               y = data.frame(paste("F_vs_t_curve", i, sep = "" ))[i]$pN)) +
+            geom_point() +
+            geom_line() +
+            ggtitle("") +
+            labs(
+              x = "Time [ms]",
+              y = "Force [pN]")) }
 
-assign( paste0("raw", 3, sep = ""), 
-        ggplot(data = F_vs_t_curve3, mapping = aes(x = ms, y = pN)) +
-          geom_point() +
-          geom_line() +
-          ggtitle("") +
-          labs(
-            x = "Time [ms]",
-            y = "Force [pN]") ) 
+plot_grid(raw1, raw2)
 
-assign( paste0("raw", 3, sep = ""), 
-        ggplot(data = data.frame(paste("F_vs_t_curve",3, sep = "")), mapping = aes(x = ms, y = pN)) +
-          geom_point() +
-          geom_line() +
-          ggtitle("") +
-          labs(
-            x = "Time [ms]",
-            y = "Force [pN]") ) 
+plot_grid(raw1, raw2, raw3, raw4, raw5, raw6, raw7, align = "h")
 
-for i in seq_along(Curve_name) {
-  df = c(paste("F_vs_t_curve",i, sep = "")) }
 
-for i in (1:7) {
-        assign( 
-          paste0("raw", i, sep = ""),
-          ggplot(data = 
-                   data.frame( paste("F_vs_t_curve",i, sep = "")), 
-                 mapping = aes(x = ms, y = pN)) +
-          geom_point() +
-          geom_line() +
-          ggtitle("") +
-          labs(
-            x = "Time [ms]",
-            y = "Force [pN]") 
-          ) }
-
-plot_grid(raw1, raw2, raw3, raw4, raw5, raw6, raw7, nrow = 2)
+##
+tt = ggplot(data = F_vs_t_curve5, 
+       mapping = aes(x = ms, y = pN) ) +
+  geom_point() +
+  geom_line() +
+  ggtitle("") +
+  labs(
+    x = "Time [ms]",
+    y = "Force [tN]")
 
 ## Extract **maximal force (F max)** from each graph
 Fmax       <- max(F_vs_t_curve1$pN)
