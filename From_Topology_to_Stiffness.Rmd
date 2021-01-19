@@ -18,9 +18,8 @@ knitr::knit_engines$set(python = reticulate::eng_python)
 # clear workspace
 rm(list = ls())
 
-# set working directory for both (soft link)
-PATH = paste(getwd())
-
+# set working directory
+#setwd("~/Documents/Zurich_PhD/courses/2021_01_11_Compulsory_LSZGS SysBio_Computational Biology/git_folder/AFModulus_Flex/")
 
 # load packages
 library(tidyverse)
@@ -31,6 +30,7 @@ library(gridExtra)
 # Atomic Force Microscopy - From Topology to Stiffness (Modulus)
 
 The git page of this project can be found here <https://github.com/audreyyeoCH/AFModulus_Flex>.
+
 
 \newpage
 ## Import of AFM curves (force vs. separation distance) for each pixel
@@ -172,7 +172,7 @@ ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
 
 
 ### B) Intersect between baseline and parabular fit & comparison to linear fit intersect
-```{r parabula, echo=T}
+```{r parabula, echo=F, warning=F, message = FALSE}
 # Audrey
 
 ### create long form ###
@@ -202,7 +202,7 @@ p1 <- ggplot(df[1:150,]) +
   scale_x_continuous(limits = c(0,2), breaks= seq(0,1.2,0.2)) +
   scale_y_continuous(limits = c(-30, 150), breaks = seq(-30, 150,50)) + theme_gray()
 
-load("dflong.RData")
+load("F_vs_t_curves/dflong.RData")
 p2 <- ggplot(dflong) +
   geom_line(aes(ms, pN, colour = type)) +
   coord_cartesian(xlim=c(0.0, 1.2), ylim = c(-30,150)) +
@@ -265,8 +265,17 @@ F_vs_Z_curve <- read.table(Curve_Z,
                             stringsAsFactors=FALSE)
 Distance_axis <- as.vector(F_vs_Z_curve['nm'])
 
+
+## from Z curve 
 # read out delta from the distance array, using the index of Fmax-time and the index of contact-point-time
 d <- Distance_axis[Fmax_index, ] - Distance_axis[Contacting_point_index - 1, ] ## -1 to round down the contact point
+
+
+## from inverted distan ce curve (estimation for separation curve)
+Distance_axis2 <- Distance_axis %>% map_df(rev)
+#Indexes <- nrow(F_vs_Z_curve)
+d2 <- Distance_axis2[Contacting_point_index - 1, ] - Distance_axis2[Fmax_index, ]
+
 ```
 The indentation depth d = `r d` nm.
 
@@ -280,10 +289,13 @@ The indentation depth d = `r d` nm.
 v <- 0.3
 
 # half angle of the indenter=18^0
-alpha <- 180
+alpha <- 18 * pi/180 # convert from degree to radians
+
+delta <- d2 * 10^(-9) # in m
+F <- Fmax * 10^(-12) # in N
 
 # compute Young’s modulus
-E <- (Fmax * pi * (1 - v^2)) / (2 * tan(alpha) * d^2)
+E <- (F * pi * (1 - v^2)) / (2 * tan(alpha) * delta^2) * 10^(-6)
 
 ```
 The Young’s modulus E = `r E` Mega Pascal.
@@ -292,6 +304,42 @@ The Young’s modulus E = `r E` Mega Pascal.
 ## Visualisation of the Young's Modulus
 ### Print picture of topology
 ```{r picT, echo=FALSE}
+
+## jpg to grey values 
+# https://stackoverflow.com/questions/27489947/convert-jpg-to-greyscale-csv-using-r 
+
+## plot csv as image
+# import topology image as .csv file
+Img_scaled <- read.csv("~/Documents/Zurich_PhD/courses/2021_01_11_Compulsory_LSZGS SysBio_Computational Biology/git_folder/AFModulus_Flex/Img_scaled.csv", 
+                       header=FALSE)
+
+Img_scaled_dims <- dim(Img_scaled)
+min(Img_scaled)
+max(Img_scaled)
+
+# scale values from 0 to 255
+df <- Img_scaled
+
+rows <- matrix(seq_len(nrow(df)), byrow = F, ncol = ncol(df), nrow = nrow(df))
+cols <- matrix(257 - seq_len(ncol(df)), byrow = T, ncol = ncol(df), nrow = nrow(df)) # "257 - " because image top and bottom need to be flipped
+image_df <- as.data.frame(cbind( arrayInd(seq_along(as.matrix(df)), .dim = dim(df)), as.vector(as.matrix(df))))
+#colnames(image_df) <- c("rows", "cols", "values")
+colnames(image_df) <- c("x", "y", "value")
+
+Topology_image <-  imager::as.cimg(obj = image_df,
+                                   v.name = "value", 
+                                   dims = c(Img_scaled_dims[1], Img_scaled_dims[2], 1, 1)) %>% 
+  
+  #threshold(40) %>%
+  renorm(min = 0, max = 255) %>% # had to renormalize to see shapes better https://www.rdocumentation.org/packages/imager/versions/0.42.3/topics/renorm 
+  plot
+
+# save image
+save.image(im = Topology_image, file = "Topology_image.png", quality = 0.7)
+
+# histogram of intensities
+hist(unlist(Img_scaled) )
+
 
 ```
 
