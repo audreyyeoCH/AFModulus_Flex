@@ -13,40 +13,61 @@ library(gridExtra)
 # set working directory for both
 PATH = paste(getwd())
 Curve_name = list.files("F_vs_t_curves/")
-Curve_name = paste0("F_vs_t_curves/",Curve_name)
-Curve_name[1]
-load(Curve_name[1])
-# load("PATH")
-# PATH = file.path(path.expand("~"), "Documents", "Zurich_PhD", "courses", 
-# "2021_01_22_Compulsory_LSZHSSysBio_Computational Biology", "git_folder") 
-# 
-# 
-# length(a) # there are 7 files
-# PATH = "/Users/HenriMatisse/Documents/PhD_Autumn2020/Git_PhD/AFModulus_Flex"
-# firstrow = c(rep(1:7))
-# b = data.frame(firstrow, paste(PATH, a))
-# colnames(b) = c("no.", "path")
-# names(b)
-Curve_name = b
+Curve_name = paste0("F_vs_t_curves/",Curve_name, sep ="")
+# Curve_name[1] #test, this works
 
-for i in 1:7 {load(Curve_name)}
-
-F_vs_t_curve1 <- read.table(Curve_name[1], 
-                            quote="\"", 
-                            header = T,
-                            comment.char="", 
-                            stringsAsFactors=FALSE)
-F_vs_t_curve1 <- as_tibble(F_vs_t_curve1)
-
-#
-ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
+## Creating seven data frames
+for (i in 1:7) {assign(paste("F_vs_t_curve",i, sep = ""), 
+       read.table(Curve_name[i], header = TRUE))}
+## Creating seven raw plots of data points
+for (i in 1:7) {
+  assign( paste0("raw", i, sep = ""), 
+  ggplot(data = data.frame("F_vs_t_curve", i, sep = "" ), mapping = aes(x = ms, y = pN)) +
   geom_point() +
   geom_line() +
-  ggtitle(Curve_name) +
+  ggtitle("") +
   labs(
     x = "Time [ms]",
-    y = "Force [pN]"
-  )
+    y = "Force [pN]")) }
+
+
+
+assign( paste0("raw", 3, sep = ""), 
+        ggplot(data = F_vs_t_curve3, mapping = aes(x = ms, y = pN)) +
+          geom_point() +
+          geom_line() +
+          ggtitle("") +
+          labs(
+            x = "Time [ms]",
+            y = "Force [pN]") ) 
+
+assign( paste0("raw", 3, sep = ""), 
+        ggplot(data = data.frame(paste("F_vs_t_curve",3, sep = "")), mapping = aes(x = ms, y = pN)) +
+          geom_point() +
+          geom_line() +
+          ggtitle("") +
+          labs(
+            x = "Time [ms]",
+            y = "Force [pN]") ) 
+
+for i in seq_along(Curve_name) {
+  df = c(paste("F_vs_t_curve",i, sep = "")) }
+
+for i in (1:7) {
+        assign( 
+          paste0("raw", i, sep = ""),
+          ggplot(data = 
+                   data.frame( paste("F_vs_t_curve",i, sep = "")), 
+                 mapping = aes(x = ms, y = pN)) +
+          geom_point() +
+          geom_line() +
+          ggtitle("") +
+          labs(
+            x = "Time [ms]",
+            y = "Force [pN]") 
+          ) }
+
+plot_grid(raw1, raw2, raw3, raw4, raw5, raw6, raw7, nrow = 2)
 
 ## Extract **maximal force (F max)** from each graph
 Fmax       <- max(F_vs_t_curve1$pN)
@@ -207,4 +228,7 @@ alpha <- 180
 
 # compute Young’s modulus
 E <- (Fmax * pi * (1 - v^2)) / (2 * tan(alpha) * d^2)
+
+###
+
 
