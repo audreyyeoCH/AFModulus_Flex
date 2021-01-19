@@ -3,7 +3,6 @@
 # - output : from t vs F table, use conversion factor from (1)
 # - fitting (linear interpolation)
 
-
 ## loading libraries
 library(ggplot2)
 library(tidyverse)
@@ -65,43 +64,49 @@ ggplot(df) +
 # source also http://www.sthda.com/english/articles/40-regression-analysis/162-nonlinear-regression-essentials-in-r-polynomial-and-spline-regression-models/
 # intersection https://stackoverflow.com/questions/34248347/r-locate-intersection-of-two-curves
 # first model the max
-dfmax = df[100:150,]
-dfstart = df[0:110,]
-plot(dfmax)
-plot(dfstart)
-mean(dfstart$pN)
-# [1] -0.09917442
-abline(h = mean(dfstart$pN))
-locator()
+ggplot(df[1:150,]) +
+  geom_line(aes(x = ms, y = pN))
 
-(plot2 <- ggplot(NULL, aes(v, p)) + 
-    geom_point(data = df1) +
-    geom_step(data = df2)
-)
+#min(df$pN[105])
 
-f1 <- approxfun(dfmax$ms, dfmax$pN)
-f2 <- approxfun(dfstart$ms, dfstart$pN)
-plot(f1)
-plot(f2)
-abline(h = mean(dfstart$pN))
-
-
+dfmax = df[110:150,]
+dfstart = df[0:100,]
 modelmax = lm(pN ~ poly(ms,2), data= dfmax)
 modelstart = lm(pN ~ ms, data= dfstart)
-
 ms = seq(0, 2, 0.01)
-predicted.intervals_max <- predict(modelmax, dfmax)
-predicted.intervals_start <- predict(modelstart, dfstart)
+df$predicted.intervals_max <- predict(modelmax, df)
+df$predicted.intervals_start <- predict(modelstart, df)
+dflong = data.frame(ms = df$ms, 
+           pN = data.matrix(c(df$pN, df$predicted.intervals_start, 
+                              df$predicted.intervals_max)),
+           type = as.factor(c(rep("raw", length(df$pN)), 
+                              rep("start", length(df$predicted.intervals_start)), 
+                              rep("max", length(df$predicted.intervals_max)))))
+ggplot(dflong) +
+  geom_line(aes(ms, pN, colour = type)) +
+  coord_cartesian(xlim=c(0.0, 1.2), ylim = c(-30,150)) +
+  labs()
+curve1 = coef(modelstart)[1] + coef(modelstart)[2]*ms
+curve2 = coef(modelstart)[1] + coef(modelstart)[2]*ms^2
+# curve_intersect(curve1, curve2, empirical = FALSE, domain = c(0, 5))
+# intersect = optimize(function(t0) abs(f1(t0) - curve2), interval = range(df$ms))
+equivalent <- function(x, y, tol = 0.005) abs(x - y) < tol
+xmin <- df$ms[120]
+xmax <- df$ms[127]
+#min(df$ms[120:127])
+intersection_indices <- which(equivalent(curve1, curve1) & x >= xmin & x <= xmax)
+x[intersection_indices]
+#> [1] 3.93 7.07
+points(x[intersection_indices], y1[intersection_indices])
 #lines(dfmax$ms, predicted.intervals,col='green',lwd=3)
 #plot(dfmax$ms, predicted.intervals)
+ggplot(df[95:150,]) +
+  geom_jitter(aes(x = ms, y = pN)) +
+  geom_line(aes(x = ms, y = pN)) +
+  geom_line(aes(ms, predicted.intervals_max, fill = predicted.intervals_max))+
+  geom_line(aes(ms, predicted.intervals_start, fill = predicted.intervals_start)) 
 
-dfmax$predicted.intervals_max = predicted.intervals_max
-dfstart$predicted.intervals_start = predicted.intervals_start
 
-ggplot(dfmax) +
-  geom_line(aes(ms, predicted.intervals_max))
-ggplot(dfstart) +
-  geom_line(aes(ms, predicted.intervals_start))
 
 ### new 
 ggplot(df) +
@@ -112,15 +117,7 @@ ggplot(df) +
   geom_hline(yintercept = mean(dfstart$pN), colour = "pink", lwd = .5) +
   geom_line(dfmax, aes(x = dfmax$ms, y = dfmax$predicted.intervals)) +
   labs(x = "Time [ms]", y = "Force [pN]")
-  
-ggplot(dfmax) +
-  geom_line(aes(x = ms, y =predicted.intervals )) 
-  
-ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
-    geom_point() +
-    geom_line() +
-    +
-    ggtitle(Curve_name) +
+
     
 
 # max
@@ -162,7 +159,7 @@ Force = intersect[2]
 # [1] 0.9843756
 
 # min(df$ms[120:127])
-# min(df$pN[110:127])
+#min(df$pN[110:127])
 
 ggplot(df[0:150,]) +
   geom_jitter(aes(x = ms, y = pN)) +
