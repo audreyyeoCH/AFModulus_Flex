@@ -20,10 +20,10 @@ output : table conversion
 
 next goals Tuesday 19.01.2020, 10h meet, Audrey's zoom:
 
-YM formula (Selene)
+YM formula (Selen)
 Topography (python Astrid and Selen) create image
 Intergrate my code and for loop (Audrey) 
-Tell Selene contact point and max point. 
+Tell Selen contact point and max point. 
 
 next meeting 20.01.2020, 13h30h meet, Audrey's zoom.
 
