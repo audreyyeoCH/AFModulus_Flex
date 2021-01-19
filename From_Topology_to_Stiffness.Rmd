@@ -172,7 +172,7 @@ ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
 
 
 ### B) Intersect between baseline and parabular fit & comparison to linear fit intersect
-```{r parabula, echo=F, warning=F, message = FALSE}
+```{r parabula, echo=T}
 # Audrey
 
 ### create long form ###
@@ -318,10 +318,11 @@ min(Img_scaled)
 max(Img_scaled)
 
 # scale values from 0 to 255
-df <- Img_scaled
+df <- t(Img_scaled) # to flip image 
 
 rows <- matrix(seq_len(nrow(df)), byrow = F, ncol = ncol(df), nrow = nrow(df))
-cols <- matrix(257 - seq_len(ncol(df)), byrow = T, ncol = ncol(df), nrow = nrow(df)) # "257 - " because image top and bottom need to be flipped
+cols <- matrix(seq_len(ncol(df)), byrow = T, ncol = ncol(df), nrow = nrow(df)) 
+
 image_df <- as.data.frame(cbind( arrayInd(seq_along(as.matrix(df)), .dim = dim(df)), as.vector(as.matrix(df))))
 #colnames(image_df) <- c("rows", "cols", "values")
 colnames(image_df) <- c("x", "y", "value")
