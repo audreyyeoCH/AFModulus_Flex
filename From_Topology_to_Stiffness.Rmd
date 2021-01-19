@@ -18,7 +18,7 @@ knitr::knit_engines$set(python = reticulate::eng_python)
 # clear workspace
 rm(list = ls())
 
-# set working directory for both
+# set working directory for both (soft link)
 PATH = paste(getwd())
 
 
