@@ -19,35 +19,32 @@ Curve_name = paste0("F_vs_t_curves/",Curve_name, sep ="")
 ## Creating seven data frames
 for (i in 1:7) {assign(paste("F_vs_t_curve",i, sep = ""), 
        read.table(Curve_name[i], header = TRUE))}
+##
+df = list(F_vs_t_curve1, F_vs_t_curve2,F_vs_t_curve3, F_vs_t_curve4 ,F_vs_t_curve5, F_vs_t_curve6, F_vs_t_curve7 )
+
 ## Creating seven raw plots of data points
 for (i in 1:7) {
   assign( paste0("raw", i, sep = ""), 
-  ggplot(data = data.frame("F_vs_t_curve", i, sep = "" ), 
-         mapping = aes(x = data.frame(paste("F_vs_t_curve", i, sep = "" ))[i]$ms, y = data.frame("F_vs_t_curve", i, sep = "" )[i]$pN)) +
+  ggplot(data = df[[i]], 
+         aes(ms, y = pN)) +
   geom_point() +
   geom_line() +
   ggtitle("") +
   labs(
     x = "Time [ms]",
-    y = "Force [pN]")) }
-
-
-for (i in 1:7) {
-  assign( paste0("raw", i, sep = ""), 
-          ggplot(data = data.frame("F_vs_t_curve", i, sep = "" ), 
-                 mapping = aes(x = data.frame(paste("F_vs_t_curve", i, sep = "" ))[i]$ms, 
-                               y = data.frame(paste("F_vs_t_curve", i, sep = "" ))[i]$pN)) +
-            geom_point() +
-            geom_line() +
-            ggtitle("") +
-            labs(
-              x = "Time [ms]",
-              y = "Force [pN]")) }
-
-plot_grid(raw1, raw2)
+    y = "Force [pN]") )
+}
+# this is a check and this works
+ggplot(data = df[[1]], 
+       aes(ms, y = pN)) +
+  geom_point() +
+  geom_line() +
+  ggtitle("") +
+  labs(
+    x = "Time [ms]",
+    y = "Force [pN]")
 
 plot_grid(raw1, raw2, raw3, raw4, raw5, raw6, raw7, align = "h")
-
 
 ##
 tt = ggplot(data = F_vs_t_curve5, 
@@ -60,7 +57,7 @@ tt = ggplot(data = F_vs_t_curve5,
     y = "Force [tN]")
 
 ## Extract **maximal force (F max)** from each graph
-Fmax       <- max(F_vs_t_curve1$pN)
+Fmax       <- max(df[[i]]$pN)
 Fmax_t     <- F_vs_t_curve1$ms[F_vs_t_curve1$pN == Fmax]
 Fmax_index <- which(F_vs_t_curve1$pN == Fmax) # alternative: which.max(F_vs_t_curve1$pN)
 
