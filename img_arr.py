@@ -35,7 +35,6 @@ img_arr = loadtxt('Img_scaled.csv', delimiter=',')
 # Show the image array as an intensity map
 #------------------------------------------------------------------------------
 
-#data = np.random.randint(0,12,(6,6)) # random values between 0 and 11
 
 fig, ax = plt.subplots()
 
