@@ -1,10 +1,9 @@
 # AFModulus_Flex
 A Biophysics Flex : Calculating Modulus from AFM data (Atomic force microscopy). 
 
+#Background
 
 #Research questions
-
-dataframe used : barcode 4069
 
 1. What is transformation of Z to t and vice versa (Selen)
 output : table conversion 
@@ -15,20 +14,16 @@ output : table conversion
 	- output : from t vs F table, use conversion factor from (1), y val, x val = index (time stamp)
 	- fitting and histogram
 
-11h next meeting 15.01.2020
+#Method :
+
+1. Image is reflected in an array of dimension 256 x 256, each cell is a pixel which has also 256 values of Force and distance (indentation dept), two component of the Young's Modulus. Two parameters are interest are the Force (in pN), that is the peak Force and contact point, both in pN. 
+2. The peak Force and contact point are two variables plotted on an x and y axis. Two linear curves are fitted on the "approach" phase and on the contact point phase. The intersection is the estimate of the contact point. The maximum point of the contact point phase is the estimate of the contact point.
+3. (2) is performed for the 256x256 array in (1), whereby 256 estimates of Young's Modulus represents each pixel.
+4. The Young's Modulus in (3) expressed in an intensity image on a surface of a vesicule with a fat bubble.
 
 
-next goals Tuesday 19.01.2020, 10h meet, Audrey's zoom:
+#Results
 
-YM formula (Selen)
-Topography (python Astrid and Selen) create image
-Intergrate my code and for loop (Audrey) 
-Tell Selen contact point and max point. 
+1. The result intended is an intensity image reflecting the Young's Modulus of an image of a surface of a vesicule with a fat bubble. 
 
-next meeting 20.01.2020, 13h30h meet, Audrey's zoom.
-
-next next to do list, Selen, Astrid, Audrey :
-Quantify precision and accuracy in intersection
-Quantify precision and accuracy in YM
-Define background and study aims, including variables :
-Contact point 
+#Conclusion
