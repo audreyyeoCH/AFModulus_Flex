@@ -18,8 +18,11 @@ knitr::knit_engines$set(python = reticulate::eng_python)
 # clear workspace
 rm(list = ls())
 
-# set working directory
-setwd("~/Documents/Zurich_PhD/courses/2021_01_11_Compulsory_LSZGS SysBio_Computational Biology/git_folder/")
+# Astrid set working directory in console
+# setwd("~/Documents/Zurich_PhD/courses/2021_01_11_Compulsory_LSZGS SysBio_Computational Biology/git_folder/AFModulus_Flex/") # I put AFModulus_Flex because the R file will start from here ... 
+
+# Astrid, set your wd in console and leave the soft link on line 25, that way we can work on the same script. 
+PATH = paste(getwd())
 
 # load packages
 library(tidyverse)
@@ -34,7 +37,7 @@ The git page of this project can be found here <https://github.com/audreyyeoCH/A
 ## Import of AFM curves (force vs. separation distance) for each pixel
 
 ```{r import, echo = FALSE}
-Curve_name <- "AFModulus_Flex/F_vs_t_curves/20200619_.005.pfc-4069_ForceCurveIndex_45647.spm - NanoScope Analysis_F_vs_t.txt"
+Curve_name <- "F_vs_t_curves/20200619_.005.pfc-4069_ForceCurveIndex_45647.spm - NanoScope Analysis_F_vs_t.txt"
 F_vs_t_curve1 <- read.table(Curve_name, 
                             quote="\"", 
                             header = T,

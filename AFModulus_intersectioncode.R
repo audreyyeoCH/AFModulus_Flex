@@ -43,32 +43,38 @@ ggplot(data = df[[1]],
   labs(
     x = "Time [ms]",
     y = "Force [pN]")
-
-plot_grid(raw1, raw2, raw3, raw4, raw5, raw6, raw7, align = "h")
-
-##
-tt = ggplot(data = F_vs_t_curve5, 
-       mapping = aes(x = ms, y = pN) ) +
+ggplot(data = df[[1]], 
+       aes(ms, y = pN)) +
   geom_point() +
   geom_line() +
   ggtitle("") +
   labs(
     x = "Time [ms]",
-    y = "Force [tN]")
+    y = "Force [pN]")
 
+# these plots already saved on git
+# plot_grid(raw1, raw2, raw3, raw4, raw5, raw6, raw7, align = "h") 
+
+for (i in 1:7) {
 ## Extract **maximal force (F max)** from each graph
-Fmax       <- max(df[[i]]$pN)
-Fmax_t     <- F_vs_t_curve1$ms[F_vs_t_curve1$pN == Fmax]
-Fmax_index <- which(F_vs_t_curve1$pN == Fmax) # alternative: which.max(F_vs_t_curve1$pN)
+  Fmax       <- data.frame(max(df[[i]]$pN))
+  Fmax_t     <- data.matrix(df[[i]]$ms[df[[i]]$pN == Fmax[i]]) # does not work
+  Fmax_index <- data.frame(which.max(df[[i]]$pN)) # alternative: 
+}
 
+
+# for (i in 1:7) {
+#   ## Extract **maximal force (F max)** from each graph
+#   Fmax       <- as.vector(c(max(df[[i]]$pN)))
+# }
 
 ## baseline
-Index_t_0.5 <- nrow(F_vs_t_curve1)/4  #index after 1st quarter
-Index_t_1.2 <- floor(1.2/2 * nrow(F_vs_t_curve1)) #index after 60%
-Index_t_1.5 <- 3/4 * nrow(F_vs_t_curve1) #index after 3 quarters
-Index_t_2.0 <- nrow(F_vs_t_curve1) #last index
+Index_t_0.5 <- nrow(df[[i]])/4  #index after 1st quarter
+Index_t_1.2 <- floor(1.2/2 * nrow(df[[i]])) #index after 60%
+Index_t_1.5 <- 3/4 * nrow(df[[i]]) #index after 3 quarters
+Index_t_2.0 <- nrow(df[[i]]) #last index
 
-Force_base_values <- c( F_vs_t_curve1$pN[1 : Index_t_0.5], F_vs_t_curve1$pN[Index_t_1.5 : Index_t_2.0])
+Force_base_values <- c( df[[i]]$pN[1 : Index_t_0.5], df[[i]]$pN[Index_t_1.5 : Index_t_2.0])
 Force_baseline <- mean(Force_base_values)
 
 # plot baseline values and baseline (red)
@@ -88,7 +94,7 @@ ggplot(data = Dataframe, mapping = aes(x = index, y = force )) +
 
 ## gradient 
 # curve to consider
-F_vs_t_gradient <- F_vs_t_curve1[Index_t_0.5 : Index_t_1.2, ]
+F_vs_t_gradient <- df[[i]][Index_t_0.5 : Index_t_1.2, ]
 
 # calc best fitting positive slope
 library(zoo)
@@ -115,7 +121,7 @@ output <- output[output$gradient > 0,]
 bestfit <- as.data.frame(output)[which.max(output$rsquared),]
 
 # plot
-ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
+ggplot(data = df[[i]], mapping = aes(x = ms, y = pN)) +
   geom_point() +
   geom_line() +
   geom_abline(intercept = bestfit$intercept, slope = bestfit$gradient, colour = "blue", lwd = 1.5) +
@@ -134,7 +140,7 @@ Contacting_point_F <- bestfit$gradient * Contacting_point_t + bestfit$intercept
 Contacting_point   <- as.data.frame(Contacting_point_t, Contacting_point_F)
 
 # plot
-ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
+ggplot(data = df[[i]], mapping = aes(x = ms, y = pN)) +
   geom_point() +
   geom_line() +
   geom_abline(slope = 0, intercept = Force_baseline, colour = "red", lwd = 1.5) +
@@ -147,7 +153,7 @@ ggplot(data = F_vs_t_curve1, mapping = aes(x = ms, y = pN)) +
   )
 
 
-df = F_vs_t_curve1
+df = df[[i]]
 p1 <- ggplot(df[1:150,]) +
   geom_line(aes(x = ms, y = pN)) +
   labs(x = "Time [ms]",
@@ -181,6 +187,13 @@ ggplot(dflong) +
 
 
 
+# calculate time steps between all measurements in df[[i]]
+Time_difference <- Fmax_t - Contacting_point_t
+Time_step <-  df[[i]][2,1]
+Time_steps_in_d <- Time_difference / Time_step
+
+# Fmax_index  already known
+
 # calculate time steps between all measurements in F_vs_t_curve1
 Time_difference <- Fmax_t - Contacting_point_t
 Time_step <-  F_vs_t_curve1[2,1]
@@ -192,7 +205,7 @@ Time_steps_in_d <- Time_difference / Time_step
 Contacting_point_index <- unlist( Fmax_index - floor(Time_steps_in_d) )
 
 # import distance array
-Curve_Z <- "F_vs_Z_curves/20200619_.005.pfc-4069_ForceCurveIndex_45647.spm - NanoScope Analysis.txt"
+Curve_Z <- "AFModulus_Flex/F_vs_Z_curves/20200619_.005.pfc-4069_ForceCurveIndex_45647.spm - NanoScope Analysis.txt"
 F_vs_Z_curve <- read.table(Curve_Z, 
                            quote="\"", 
                            header = T,
@@ -201,8 +214,9 @@ F_vs_Z_curve <- read.table(Curve_Z,
 Distance_axis <- as.vector(F_vs_Z_curve['nm'])
 
 # read out delta from the distance array, using the index of Fmax-time and the index of contact-point-time
-d <- Distance_axis[Fmax_index, ] - Distance_axis[Contacting_point_index - 1, ] ## -1 to round down the contact point
+d <- Distance_axis[Fmax_index, ] - Distance_axis[Contacting_point_index, ]
 
+## Compute **modulus (= stiffness, E)** for each pixel from F-max and d
 
 
 # Fmax & indentation depth d were computed above
@@ -215,7 +229,3 @@ alpha <- 180
 
 # compute Young’s modulus
 E <- (Fmax * pi * (1 - v^2)) / (2 * tan(alpha) * d^2)
-
-###
-
-
